@@ -1,0 +1,4 @@
+course-service (cổng 8082, tiền tố: /api/courses)
+- GET /courses : Danh sách
+- GET /courses/{id} : Chi tiết
+- POST /courses : Thêm
