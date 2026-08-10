@@ -4,7 +4,10 @@ import vn.edu.crs.course_service.dto.CourseDTO;
 import vn.edu.crs.course_service.entity.Course;
 import vn.edu.crs.course_service.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -27,6 +30,13 @@ public class CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Khong tim thay mon hoc id = " + id));
         return toDTO(course);
+    }
+
+    public Page<CourseDTO> search(String keyword, Pageable pageable) {
+        Page<Course> page = (keyword == null || keyword.isBlank()) ?
+                courseRepository.findAll(pageable) :
+                courseRepository.findByTenMonHocContainingIgnoreCase(keyword, pageable);
+        return page.map(this::toDTO);
     }
 
     public CourseDTO create(CourseDTO dto) {
@@ -55,6 +65,31 @@ public class CourseService {
             throw new NoSuchElementException("Khong tim thay mon hoc id = " + id);
         }
         courseRepository.deleteById(id);
+    }
+
+    @Transactional
+    public CourseDTO reserveSeat(Long courseId) {
+        // Lấy entity managed trực tiếp từ DB
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new NoSuchElementException("Mon hoc khong ton tai id = " + courseId));
+
+        if (course.getSoChoConLai() <= 0) {
+            throw new IllegalStateException("Mon hoc da het cho trong");
+        }
+
+        course.setSoChoConLai(course.getSoChoConLai() - 1);
+        courseRepository.save(course);
+        return null;
+    }
+
+    @Transactional
+    public CourseDTO releaseSeat(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new NoSuchElementException("Khong tim thay mon hoc id = " + courseId));
+        if (course.getSoChoConLai() < course.getSoChoToiDa()) {
+            course.setSoChoConLai(course.getSoChoConLai() + 1);
+        }
+        return toDTO(courseRepository.save(course));
     }
 
     private CourseDTO toDTO(Course course) {
