@@ -1,25 +1,17 @@
 package vn.edu.crs.auth_service.controller;
-
+import vn.edu.crs.auth_service.dto.LoginRequestDTO;
+import vn.edu.crs.auth_service.dto.LoginResponseDTO;
+import vn.edu.crs.auth_service.service.AuthService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
-
+    private final AuthService authService;
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-
-        if ("student".equals(username) && "123456".equals(password)) {
-            return Map.of(
-                    "status", "success",
-                    "token", "mock-jwt-token-xyz123",
-                    "username", username,
-                    "role", "STUDENT"
-            );
-        }
-        return Map.of("status", "error", "message", "Sai tai khoan hoac mat khau!");
+    public LoginResponseDTO login(@Valid @RequestBody LoginRequestDTO dto) {
+        return authService.login(dto);
     }
 }
