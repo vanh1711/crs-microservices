@@ -1,76 +1,17 @@
-================================================================================
-THIẾT KẾ RANH GIỚI VÀ PHÂN CHIA TRÁCH NHIỆM (SERVICE BOUNDARIES)
-================================================================================
+1. Danh sách Service & Thành phần
+- api-gateway (8080): Điểm vào duy nhất, định tuyến (RewritePath), xác thực sơ bộ (AuthHeaderFilter), CORS.
+- auth-service (8081, auth_db): Quản lý User/Student, đăng nhập, phát hành và xác thực JWT.
+- course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang, quản lý số chỗ (reserve/release seat).
+- registration-service (8083, registration_db): Quản lý Registration, gọi REST nội bộ sang course-service để giữ chỗ.
+- crs-frontend (5174/5173): Giao diện React, kết nối qua Gateway, tìm kiếm debounce, phân trang, xử lý 4 trạng thái (Loading, Success, Empty, Error).
 
-1. BẢN ĐỒ SERVICE & PHẠM VI TRÁCH NHIỆM
---------------------------------------------------------------------------------
-Hệ thống Course Registration System (CRS) được xây dựng theo kiến trúc Microservices phân tán, gồm các thành phần:
+2. Nguyên tắc sở hữu dữ liệu
+- Database-per-Service: Mỗi service sở hữu database riêng biệt (auth_db, course_db, registration_db).
+- Tuyệt đối KHÔNG truy cập trực tiếp hoặc join chéo DB của service khác.
+- Trao đổi hoặc thay đổi dữ liệu liên service bắt buộc phải gọi qua REST API.
 
-a) api-gateway (Port 8080 - Spring Cloud Gateway)
-   - Đóng vai trò là "Cửa ngõ duy nhất" (Single Entry Point) cho toàn bộ traffic từ bên ngoài.
-   - Nhiệm vụ:
-     + Định tuyến (Routing & Path Rewriting) tới các service phía sau.
-     + Cấu hình CORS tập trung (cho phép Frontend tại localhost:5173 / localhost:5174).
-     + Lọc và kiểm tra bảo mật sơ bộ (AuthHeaderFilter: kiểm tra Header Authorization Bearer, API Key cho Partner).
-
-b) auth-service (Port 8081 - DB: auth_db)
-   - Quản lý định danh người dùng (User, Student, Admin).
-   - Nhiệm vụ: Xác thực tài khoản (Login), phát hành và ký số JSON Web Token (JWT), phân quyền vai trò.
-
-c) course-service (Port 8082 - DB: course_db)
-   - Quản lý danh mục học phần đào tạo.
-   - Nhiệm vụ:
-     + CRUD thông tin môn học (Tên môn, số tín chỉ, số chỗ tối đa, số chỗ còn lại).
-     + Cung cấp tính năng tìm kiếm theo từ khóa (keyword) và phân trang dữ liệu (Pageable).
-     + Cung cấp endpoint nội bộ (/internal/courses) để khóa/giữ chỗ và nhả chỗ theo thời gian thực.
-
-d) registration-service (Port 8083 - DB: registration_db)
-   - Quản lý quy trình đăng ký môn học của sinh viên.
-   - Nhiệm vụ:
-     + Tiếp nhận yêu cầu đăng ký học phần từ sinh viên.
-     + Kiểm tra tính hợp lệ của bản ghi đăng ký.
-     + Điều phối giao tiếp đồng bộ (REST Call) sang course-service để giữ chỗ (reserve seat). Nếu giữ chỗ thành công mới lưu phiếu đăng ký vào registration_db.
-
-e) crs-frontend (Port 5174 / 5173 - React, Vite, TypeScript)
-   - Giao diện người dùng (Single Page Application).
-   - Nhiệm vụ:
-     + Kết nối độc quyền với API Gateway (không gọi trực tiếp các port microservices lẻ).
-     + Xử lý tối ưu UI/UX với Debounce search (400ms) và phân trang linh hoạt.
-     + Đảm bảo xử lý đủ 4 trạng thái vòng đời request: Loading (Skeleton), Success (Bảng dữ liệu + Tiến độ chỗ), Empty (Không có kết quả), Error (Mất kết nối / Lỗi nghiệp vụ có nút Thử lại).
-
-
-2. NGUYÊN TẮC QUẢN TRỊ DỮ LIỆU (DATABASE-PER-SERVICE)
---------------------------------------------------------------------------------
-- Tính cô lập dữ liệu tuyệt đối:
-  + auth_db, course_db, registration_db là 3 cơ sở dữ liệu vật lý riêng biệt.
-  + Tuyệt đối KHÔNG sử dụng Foreign Key chéo database, KHÔNG viết câu lệnh SQL JOIN giữa các database khác nhau.
-- Quy tắc giao tiếp:
-  + Service A muốn lấy dữ liệu hoặc thay đổi trạng thái của Service B bắt buộc phải gọi qua REST API do Service B cung cấp.
-  + Ví dụ: registration-service không được tự ý UPDATE bảng course trong course_db, mà phải gửi HTTP PATCH tới /internal/courses/{id}/reserve-seat của course-service.
-
-
-3. CƠ CHẾ GIAO TIẾP & BẢO MẬT PHÂN TẦNG
---------------------------------------------------------------------------------
-Hệ thống phân định rõ 4 luồng lưu lượng:
-
-1. Public Flow (Công khai):
-   - /api/auth/login: Dành cho mọi người dùng đăng nhập.
-   - GET /api/courses: Cho phép sinh viên/khách tra cứu danh sách và tìm kiếm môn học trước khi đăng ký.
-   
-2. Secured Flow (Yêu cầu JWT):
-   - POST /api/registrations: Bắt buộc kèm Bearer JWT của sinh viên để xác định danh tính.
-   - POST/PUT/DELETE /api/courses: Chỉ dành cho tài khoản quản trị viên.
-
-3. Partner Flow (Dành cho đối tác):
-   - /api/public/courses: Xác thực qua Header bí mật X-API-KEY.
-
-4. Internal Flow (Giao tiếp cô lập):
-   - /internal/courses/**: Chỉ các service nội bộ trong cùng cụm mạng gọi trực tiếp lẫn nhau, API Gateway không public route này ra ngoài Internet.
-
-
-4. KHẢ NĂNG CHỊU LỖI & PHẢN HỒI (FAULT RESILIENCE)
---------------------------------------------------------------------------------
-- Khi một service gặp sự cố (ví dụ: course-service bị dừng):
-  + API Gateway vẫn hoạt động bình thường, không làm sập toàn bộ hệ thống.
-  + Frontend bắt được lỗi mất kết nối (!err.response) và hiển thị thông báo rõ ràng: "Không kết nối được tới hệ thống. Vui lòng thử lại sau." thay vì bị trắng trang (crash UI).
-  + Người dùng có thể nhấn nút "Thử lại kết nối" khi service được khởi động lại.
+3. Phân luồng bảo mật tại Gateway
+- Public: /api/auth/login, GET /api/courses (xem & tìm kiếm môn học).
+- Protected (Bearer JWT): /api/registrations, POST/PUT/DELETE /api/courses.
+- Partner (API Key): /api/public/courses (xác thực qua Header X-API-KEY).
+- Internal: /internal/courses/** (chỉ gọi nội bộ giữa các service, không mở qua Gateway).
