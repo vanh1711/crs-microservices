@@ -1,4 +1,88 @@
-course-service (cổng 8082, tiền tố: /api/courses)
-- GET /courses : Danh sách
-- GET /courses/{id} : Chi tiết
-- POST /courses : Thêm
+================================================================================
+BẢN THIẾT KẾ BLUEPRINT API - HỆ THỐNG CRS MICROSERVICES
+================================================================================
+
+1. API GATEWAY ROUTING (Cổng 8080 - Điểm tiếp nhận duy nhất)
+--------------------------------------------------------------------------------
+Tất cả client (Web Frontend, Mobile, Third-party) đều gửi request qua Gateway.
+Gateway đảm nhận RewritePath, AuthHeaderFilter và cấu hình CORS.
+
+[Nhóm 1: Xác thực & Người dùng -> auth-service (8081)]
+- POST   /api/auth/login
+  + Rewrite: /auth/login
+  + Auth: Không yêu cầu Token (Public)
+  + Body: { "username": "...", "password": "..." }
+  + Trả về: { "token": "JWT_STRING", "username": "...", "role": "..." }
+
+[Nhóm 2: Quản lý & Tra cứu Môn học -> course-service (8082)]
+- GET    /api/courses
+  + Rewrite: /courses
+  + Auth: Public (cho phép xem danh sách & tìm kiếm môn học)
+  + Query Params:
+    * keyword (string, optional): Từ khóa tìm kiếm theo tên môn
+    * page (int, default=0): Số thứ tự trang
+    * size (int, default=10): Số lượng bản ghi trên một trang
+  + Trả về: PagedResponse { content: [Course], totalElements, totalPages, number, size }
+
+- GET    /api/courses/{id}
+  + Rewrite: /courses/{id}
+  + Auth: Public
+  + Trả về: Thông tin chi tiết 1 môn học
+
+- POST   /api/courses
+  + Rewrite: /courses
+  + Auth: Yêu cầu Header `Authorization: Bearer <token>`
+  + Body: { "tenMonHoc": "...", "soTinChi": 3, "soChoToiDa": 50 }
+  + Trả về: Thông tin môn học vừa tạo (HTTP 201)
+
+- PUT    /api/courses/{id}
+  + Rewrite: /courses/{id}
+  + Auth: Yêu cầu Header `Authorization: Bearer <token>`
+  + Body: Dữ liệu cập nhật môn học
+
+- DELETE /api/courses/{id}
+  + Rewrite: /courses/{id}
+  + Auth: Yêu cầu Header `Authorization: Bearer <token>`
+  + Trả về: HTTP 204 No Content
+
+- GET    /api/public/courses (Dành riêng cho đối tác / Partner)
+  + Rewrite: /courses
+  + Auth: Yêu cầu Header `X-API-KEY: crs-partner-key-2026`
+
+[Nhóm 3: Đăng ký Học phần -> registration-service (8083)]
+- POST   /api/registrations
+  + Rewrite: /registrations
+  + Auth: Yêu cầu Header `Authorization: Bearer <token>`
+  + Body: { "studentId": 1, "courseId": 2 }
+  + Trả về: Thông tin bản ghi đăng ký (HTTP 201 Created)
+
+- GET    /api/registrations/student/{studentId}
+  + Rewrite: /registrations/student/{studentId}
+  + Auth: Yêu cầu Header `Authorization: Bearer <token>`
+  + Trả về: Danh sách các môn học sinh viên đã đăng ký
+
+
+2. INTERNAL REST APIs (Giao tiếp nội bộ giữa các Service - Không public ra ngoài)
+--------------------------------------------------------------------------------
+Các API này phục vụ điều phối nghiệp vụ giữa registration-service và course-service:
+
+[course-service :8082 -> Gọi nội bộ bởi registration-service]
+- PATCH  /internal/courses/{id}/reserve-seat
+  + Mục đích: Trừ 1 chỗ trống khi sinh viên đăng ký môn học thành công.
+  + Trả về: "Giu cho thanh cong" (HTTP 200) hoặc lỗi HTTP 400 nếu môn đã hết chỗ (soChoConLai <= 0).
+
+- PATCH  /internal/courses/{id}/release-seat
+  + Mục đích: Cộng lại 1 chỗ trống khi sinh viên hủy đăng ký môn học.
+  + Trả về: "Nha cho thanh cong" (HTTP 200).
+
+
+3. QUY ƯỚC MÃ LỖI & PHẢN HỒI (Error Response Format)
+--------------------------------------------------------------------------------
+Khi xảy ra lỗi (Validation, Not Found, Hết chỗ, Lỗi xác thực), backend trả về định dạng chuẩn:
+{
+  "timestamp": "2026-08-28T13:45:00",
+  "status": 400 / 403 / 404 / 500,
+  "error": "Tên mã lỗi",
+  "message": "Mô tả lỗi tiếng Việt cụ thể cho người dùng",
+  "path": "/api/..."
+}
