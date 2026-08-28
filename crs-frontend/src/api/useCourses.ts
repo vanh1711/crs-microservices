@@ -6,8 +6,8 @@ import axios from 'axios';
 
 export type LoadState = 'loading' | 'success' | 'empty' | 'error';
 
-// size = 2 de de dang test phan trang khi DB co it du lieu
-export function useCourses(keyword: string, page: number, size = 2) {
+// size = 5 de hien thi nhieu mon hoc tren 1 trang hon
+export function useCourses(keyword: string, page: number, size = 5) {
     const [courses, setCourses] = useState<Course[]>([]);
     const [totalPages, setTotalPages] = useState(0);
     const [state, setState] = useState<LoadState>('loading');
