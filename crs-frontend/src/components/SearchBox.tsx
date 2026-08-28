@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SearchBoxProps {
     onSearch: (keyword: string) => void;
@@ -8,12 +8,20 @@ interface SearchBoxProps {
 
 export default function SearchBox({ onSearch, placeholder, totalResults }: SearchBoxProps) {
     const [inputValue, setInputValue] = useState('');
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
+        // Tránh gọi onSearch khi component vừa mount lần đầu
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         const timer = setTimeout(() => {
             onSearch(inputValue.trim());
         }, 400);
-        return () => clearTimeout(timer); // huy timer cu moi lan inputValue thay doi
+
+        return () => clearTimeout(timer);
     }, [inputValue, onSearch]);
 
     const handleClear = () => {
@@ -52,7 +60,7 @@ export default function SearchBox({ onSearch, placeholder, totalResults }: Searc
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                     </svg>
-                    <span>{totalResults} môn học</span>
+                    <span>{totalResults} môn học / trang</span>
                 </div>
             )}
         </div>

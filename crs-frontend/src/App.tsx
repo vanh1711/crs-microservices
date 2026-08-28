@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCourses } from './api/useCourses';
 import SearchBox from './components/SearchBox';
 import CourseList from './components/CourseList';
@@ -9,10 +9,16 @@ function App() {
     const [page, setPage] = useState(0);
     const { courses, totalPages, state, errorMessage, refetch } = useCourses(keyword, page);
 
-    const handleSearch = (newKeyword: string) => {
-        setKeyword(newKeyword);
-        setPage(0); // Mỗi lần tìm kiếm mới, luôn quay về trang đầu
-    };
+    const handleSearch = useCallback((newKeyword: string) => {
+        setKeyword((prevKeyword) => {
+            // Chỉ khi từ khóa thực sự thay đổi mới reset về trang đầu (trang 0)
+            if (prevKeyword !== newKeyword) {
+                setPage(0);
+                return newKeyword;
+            }
+            return prevKeyword;
+        });
+    }, []);
 
     return (
         <div className="app-container">
