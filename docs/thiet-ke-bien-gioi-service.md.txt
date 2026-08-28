@@ -3,21 +3,23 @@
 - auth-service (8081, auth_db): Quản lý User/Student, đăng nhập, phát hành và xác thực JWT.
 - course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang, CRUD môn học, quản lý số chỗ (reserve/release seat).
 - registration-service (8083, registration_db): Quản lý Registration, gọi REST nội bộ sang course-service để giữ chỗ.
-- crs-frontend (5174/5173): Giao diện React, form CRUD môn học (Controlled Component), tìm kiếm debounce, phân trang, xử lý 4 trạng thái và tự động đồng bộ refetch.
+- crs-frontend (5174/5173): Ứng dụng SPA đa trang (Router), quản lý phiên xác thực toàn cục (AuthContext), bảo vệ Route (ProtectedRoute), tự động đính kèm và xử lý hết hạn Token qua Axios Interceptors.
 
 2. Nguyên tắc sở hữu dữ liệu
 - Database-per-Service: Mỗi service sở hữu database riêng biệt (auth_db, course_db, registration_db).
 - Tuyệt đối KHÔNG truy cập trực tiếp hoặc join chéo DB của service khác.
 - Trao đổi hoặc thay đổi dữ liệu liên service bắt buộc phải gọi qua REST API.
 
-3. Phân luồng bảo mật tại Gateway
+3. Phân luồng bảo mật tại Gateway & Frontend
 - Public: /api/auth/login, GET /api/courses (xem & tìm kiếm môn học).
-- Protected (Bearer JWT): /api/registrations, POST/PUT/DELETE /api/courses (yêu cầu ROLE_ADMIN).
+- Protected (Bearer JWT): /api/registrations (STUDENT), POST/PUT/DELETE /api/courses (ADMIN).
 - Partner (API Key): /api/public/courses (xác thực qua Header X-API-KEY).
 - Internal: /internal/courses/** (chỉ gọi nội bộ giữa các service, không mở qua Gateway).
+- Frontend Route Guarding: ProtectedRoute chặn người dùng chưa đăng nhập hoặc sai vai trò truy cập trang trái phép.
 
-4. Cơ chế đồng bộ trạng thái & Bảo vệ dữ liệu
-- Validation 2 lớp: Client-side validate tức thời tại CourseForm (chặn request rác) + Server-side validate (@Valid DTO tại backend).
-- Đính kèm Token tự động: Axios Request Interceptor tự đọc token `crs_token` từ localStorage.
+4. Cơ chế đồng bộ trạng thái, Interceptors & Xử lý lỗi
+- Validation 2 lớp: Client-side validate tức thời tại CourseForm + Server-side validate (@Valid DTO tại backend).
+- Request Interceptor: Tự động trích xuất `crs_token` từ localStorage gắn vào Header Authorization.
+- Response Interceptor: Bắt lỗi 401 (token hết hạn) -> tự động dọn dẹp localStorage và đưa về trang /login (không tự đăng xuất với lỗi 403 sai role).
+- Role-Based UI: Ẩn/hiện các nút thao tác Sửa/Xóa và menu chức năng tương ứng theo role (ADMIN / STUDENT).
 - Cập nhật thời gian thực: Gọi `refetch()` làm mới dữ liệu sau CRUD mà không cần tải lại toàn bộ trang (F5).
-- Xử lý lỗi phân tầng: Phân biệt lỗi nghiệp vụ ({message}), lỗi validation ({fieldName}), và lỗi phân quyền (401/403).

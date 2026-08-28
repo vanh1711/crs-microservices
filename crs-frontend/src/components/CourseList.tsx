@@ -6,8 +6,8 @@ interface CourseListProps {
     state: LoadState;
     errorMessage: string;
     onRetry: () => void;
-    onEdit: (course: Course) => void;
-    onDelete: (course: Course) => void;
+    onEdit?: (course: Course) => void;
+    onDelete?: (course: Course) => void;
 }
 
 export default function CourseList({
@@ -18,6 +18,8 @@ export default function CourseList({
     onEdit,
     onDelete,
 }: CourseListProps) {
+    const showActions = !!onEdit || !!onDelete;
+
     if (state === 'loading') {
         return (
             <div className="table-card animate-fade-in">
@@ -27,7 +29,7 @@ export default function CourseList({
                             <th>Môn học</th>
                             <th style={{ width: '130px', textAlign: 'center' }}>Số tín chỉ</th>
                             <th style={{ width: '180px' }}>Tình trạng chỗ</th>
-                            <th style={{ width: '140px', textAlign: 'right' }}>Thao tác</th>
+                            {showActions && <th style={{ width: '140px', textAlign: 'right' }}>Thao tác</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -53,12 +55,14 @@ export default function CourseList({
                                         <div className="skeleton" style={{ height: 6, width: 110, borderRadius: 10 }} />
                                     </div>
                                 </td>
-                                <td>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                                        <div className="skeleton" style={{ height: 28, width: 50, borderRadius: 6 }} />
-                                        <div className="skeleton" style={{ height: 28, width: 50, borderRadius: 6 }} />
-                                    </div>
-                                </td>
+                                {showActions && (
+                                    <td>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                                            <div className="skeleton" style={{ height: 28, width: 50, borderRadius: 6 }} />
+                                            <div className="skeleton" style={{ height: 28, width: 50, borderRadius: 6 }} />
+                                        </div>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
@@ -118,7 +122,7 @@ export default function CourseList({
                         <th>Môn học</th>
                         <th style={{ width: '130px', textAlign: 'center' }}>Số tín chỉ</th>
                         <th style={{ width: '180px' }}>Số chỗ còn lại</th>
-                        <th style={{ width: '140px', textAlign: 'right' }}>Thao tác</th>
+                        {showActions && <th style={{ width: '140px', textAlign: 'right' }}>Thao tác</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -178,34 +182,40 @@ export default function CourseList({
                                         />
                                     </div>
                                 </td>
-                                <td>
-                                    <div className="row-actions">
-                                        <button 
-                                            type="button"
-                                            className="btn-table-action btn-edit" 
-                                            onClick={() => onEdit(course)}
-                                            title="Chỉnh sửa môn học"
-                                        >
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                            <span>Sửa</span>
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            className="btn-table-action btn-delete" 
-                                            onClick={() => onDelete(course)}
-                                            title="Xóa môn học"
-                                        >
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            </svg>
-                                            <span>Xóa</span>
-                                        </button>
-                                    </div>
-                                </td>
+                                {showActions && (
+                                    <td>
+                                        <div className="row-actions">
+                                            {onEdit && (
+                                                <button 
+                                                    type="button"
+                                                    className="btn-table-action btn-edit" 
+                                                    onClick={() => onEdit(course)}
+                                                    title="Chỉnh sửa môn học"
+                                                >
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
+                                                    <span>Sửa</span>
+                                                </button>
+                                            )}
+                                            {onDelete && (
+                                                <button 
+                                                    type="button"
+                                                    className="btn-table-action btn-delete" 
+                                                    onClick={() => onDelete(course)}
+                                                    title="Xóa môn học"
+                                                >
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                    </svg>
+                                                    <span>Xóa</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                             </tr>
                         );
                     })}

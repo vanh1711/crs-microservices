@@ -8,7 +8,7 @@
 - AuthHeaderFilter: Kiểm tra Bearer JWT với các route bảo vệ, bỏ qua Login và GET /api/courses
 
 2. auth-service (cổng 8081, tiền tố Gateway: /api/auth)
-- POST /auth/login : Đăng nhập tài khoản admin/student, trả về JWT Token
+- POST /auth/login : Đăng nhập tài khoản admin/student, trả về JWT Token và Role
 
 3. course-service (cổng 8082, tiền tố Gateway: /api/courses)
 - GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (page, size)
@@ -24,13 +24,18 @@
 - POST /registrations : Đăng ký môn học (gọi sang course-service để giữ chỗ)
 - GET /registrations/student/{studentId} : Danh sách môn học đã đăng ký theo sinh viên
 
-5. crs-frontend (cổng 5174/5173 - Giao diện người dùng)
-- Axios Client: Cấu hình baseURL = http://localhost:8080, tự động gắn `Authorization: Bearer <crs_token>`
-- GET /api/courses : Tra cứu danh sách môn học kèm keyword, page, size (Hook useCourses)
-- POST /api/courses : Thêm môn học mới qua CourseForm (Controlled Component)
-- PUT /api/courses/{id} : Chỉnh sửa môn học qua CourseForm
-- DELETE /api/courses/{id} : Xóa môn học có hộp thoại xác nhận (window.confirm)
-- POST /api/auth/login : Gửi thông tin đăng nhập và lưu JWT Token vào localStorage
-- POST /api/registrations : Gửi yêu cầu đăng ký học phần kèm Bearer JWT
-- Quản lý 4 trạng thái giao diện: Loading (Skeleton), Success, Empty, Error (kèm nút Thử lại)
-- Đồng bộ dữ liệu: Tự động gọi `refetch()` cập nhật lại danh sách ngay sau khi Thêm/Sửa/Xóa
+5. crs-frontend (cổng 5174/5173 - Giao diện người dùng & Điều hướng Route)
+- Cấu hình Router (react-router-dom):
+  + /login : Trang đăng nhập hệ thống (LoginPage)
+  + /courses : Trang xem danh sách môn học công khai (CoursesPage)
+  + /admin/courses : Trang quản trị môn học CRUD (AdminCoursesPage - ProtectedRoute ROLE_ADMIN)
+  + /register-course : Khung trang đăng ký môn học (RegisterCoursePage - ProtectedRoute ROLE_STUDENT)
+- Axios Client & Interceptors:
+  + Request Interceptor: Tự động đính kèm `Authorization: Bearer <crs_token>`
+  + Response Interceptor: Bắt lỗi HTTP 401 (token hết hạn/hỏng) -> tự động xóa token và chuyển hướng về /login
+- Quản lý phiên đăng nhập (AuthContext):
+  + Lưu trữ và khôi phục phiên từ `localStorage` (key: `crs_token`, `crs_user`) khi F5 trang
+  + Cung cấp `user`, `login()`, `logout()`, `isAuthenticated`
+- Role-Based UI:
+  + Navbar: Ẩn/hiện menu điều hướng tương ứng theo vai trò (ADMIN / STUDENT / Khách)
+  + CourseList: Ẩn cột "Thao tác" (Sửa/Xóa) khi ở trang công khai /courses
