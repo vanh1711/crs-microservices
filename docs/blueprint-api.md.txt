@@ -11,7 +11,7 @@
 - POST /auth/login : Đăng nhập tài khoản admin/student, trả về JWT Token và Role
 
 3. course-service (cổng 8082, tiền tố Gateway: /api/courses)
-- GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (page, size)
+- GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (page, size - mặc định 5 môn/trang)
 - GET /courses/{id} : Xem chi tiết một môn học
 - POST /courses : Thêm môn học mới (yêu cầu ROLE_ADMIN & Bearer JWT)
 - PUT /courses/{id} : Cập nhật thông tin môn học (yêu cầu ROLE_ADMIN & Bearer JWT)
@@ -39,3 +39,4 @@
 - Role-Based UI:
   + Navbar: Ẩn/hiện menu điều hướng tương ứng theo vai trò (ADMIN / STUDENT / Khách)
   + CourseList: Ẩn cột "Thao tác" (Sửa/Xóa) khi ở trang công khai /courses
+  + Phân trang & Tìm kiếm: Hook useCourses (size = 5 môn/trang, debounce 400ms, 4 trạng thái hiển thị)
