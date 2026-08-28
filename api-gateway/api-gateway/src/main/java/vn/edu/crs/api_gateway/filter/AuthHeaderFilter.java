@@ -32,7 +32,7 @@ public class AuthHeaderFilter extends AbstractGatewayFilterFactory<AuthHeaderFil
             }
 
             // 2. Kiểm tra Header Authorization cho các API khác
-            if (request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION) == null) {
+            if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
                 exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                 return exchange.getResponse().setComplete();
             }

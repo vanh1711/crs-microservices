@@ -10,31 +10,47 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
     const pages = Array.from({ length: totalPages }, (_, i) => i);
 
     return (
-        <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
-            <button
-                disabled={currentPage === 0}
-                onClick={() => onPageChange(currentPage - 1)}
-            >
-                « Trang truoc
-            </button>
-            {pages.map((p) => (
+        <div className="pagination-wrapper animate-fade-in">
+            <div className="pagination-info">
+                Trang <strong>{currentPage + 1}</strong> trên tổng số <strong>{totalPages}</strong> trang
+            </div>
+
+            <div className="pagination-controls">
                 <button
-                    key={p}
-                    onClick={() => onPageChange(p)}
-                    style={{
-                        fontWeight: p === currentPage ? 'bold' : 'normal',
-                        textDecoration: p === currentPage ? 'underline' : 'none',
-                    }}
+                    type="button"
+                    className="page-btn"
+                    disabled={currentPage === 0}
+                    onClick={() => onPageChange(currentPage - 1)}
+                    title="Trang trước"
                 >
-                    {p + 1}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
                 </button>
-            ))}
-            <button
-                disabled={currentPage >= totalPages - 1}
-                onClick={() => onPageChange(currentPage + 1)}
-            >
-                Trang sau »
-            </button>
+
+                {pages.map((p) => (
+                    <button
+                        key={p}
+                        type="button"
+                        className={`page-btn ${p === currentPage ? 'active' : ''}`}
+                        onClick={() => onPageChange(p)}
+                    >
+                        {p + 1}
+                    </button>
+                ))}
+
+                <button
+                    type="button"
+                    className="page-btn"
+                    disabled={currentPage >= totalPages - 1}
+                    onClick={() => onPageChange(currentPage + 1)}
+                    title="Trang sau"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
         </div>
     );
 }
