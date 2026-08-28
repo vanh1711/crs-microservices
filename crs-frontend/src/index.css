@@ -211,18 +211,18 @@ body {
 }
 
 /* ==========================================================================
-   NAVBAR (XANH THAN SANG TRỌNG & XANH NGỌC PHÁT QUANG)
+   NAVBAR (XANH BIỂN VỪA DỊU MẮT & XANH NGỌC PHÁT QUANG)
    ========================================================================== */
 
 .main-navbar {
-  background: rgba(11, 25, 44, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1.5px solid rgba(13, 148, 136, 0.35);
+  background: linear-gradient(135deg, rgba(18, 48, 80, 0.88) 0%, rgba(14, 74, 98, 0.85) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(45, 212, 191, 0.3);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 25px -4px rgba(2, 6, 23, 0.5), 0 0 15px -3px rgba(6, 182, 212, 0.15);
+  box-shadow: 0 4px 20px -4px rgba(15, 35, 58, 0.2), 0 0 12px -3px rgba(6, 182, 212, 0.15);
   transition: all 0.2s ease;
 }
 
@@ -265,7 +265,7 @@ body {
 .nav-brand-text {
   font-size: 19px;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #2dd4bf 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #cffafe 60%, #5eead4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.3px;
@@ -281,7 +281,7 @@ body {
   padding: 8px 16px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #cbd5e1;
   text-decoration: none;
   border-radius: var(--radius-full);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -290,14 +290,14 @@ body {
 
 .nav-link:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
 
 .nav-link.active {
-  color: #2dd4bf;
-  background: linear-gradient(135deg, rgba(13, 148, 136, 0.25), rgba(6, 182, 212, 0.2));
-  border: 1px solid rgba(45, 212, 191, 0.45);
+  color: #5eead4;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.35), rgba(6, 182, 212, 0.25));
+  border: 1px solid rgba(45, 212, 191, 0.5);
   font-weight: 700;
   box-shadow: 0 0 15px -2px rgba(6, 182, 212, 0.25);
 }
@@ -312,7 +312,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(10, 32, 54, 0.7);
   border: 1.5px solid rgba(45, 212, 191, 0.35);
   padding: 6px 14px;
   border-radius: var(--radius-full);
