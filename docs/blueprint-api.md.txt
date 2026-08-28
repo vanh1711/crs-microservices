@@ -8,14 +8,14 @@
 - AuthHeaderFilter: Kiểm tra Bearer JWT với các route bảo vệ, bỏ qua Login và GET /api/courses
 
 2. auth-service (cổng 8081, tiền tố Gateway: /api/auth)
-- POST /auth/login : Đăng nhập tài khoản, trả về JWT
+- POST /auth/login : Đăng nhập tài khoản admin/student, trả về JWT Token
 
 3. course-service (cổng 8082, tiền tố Gateway: /api/courses)
 - GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (page, size)
 - GET /courses/{id} : Xem chi tiết một môn học
-- POST /courses : Thêm môn học mới (cần JWT)
-- PUT /courses/{id} : Cập nhật môn học (cần JWT)
-- DELETE /courses/{id} : Xóa môn học (cần JWT)
+- POST /courses : Thêm môn học mới (yêu cầu ROLE_ADMIN & Bearer JWT)
+- PUT /courses/{id} : Cập nhật thông tin môn học (yêu cầu ROLE_ADMIN & Bearer JWT)
+- DELETE /courses/{id} : Xóa môn học theo ID (yêu cầu ROLE_ADMIN & Bearer JWT)
 - PATCH /internal/courses/{id}/reserve-seat : Giữ chỗ, trừ số lượng chỗ trống (gọi nội bộ)
 - PATCH /internal/courses/{id}/release-seat : Nhả chỗ, hoàn lại chỗ trống khi hủy (gọi nội bộ)
 - GET /api/public/courses : API cung cấp cho đối tác (yêu cầu X-API-KEY)
@@ -25,8 +25,12 @@
 - GET /registrations/student/{studentId} : Danh sách môn học đã đăng ký theo sinh viên
 
 5. crs-frontend (cổng 5174/5173 - Giao diện người dùng)
-- Axios Client: Cấu hình baseURL = http://localhost:8080 (gọi toàn bộ qua Gateway)
+- Axios Client: Cấu hình baseURL = http://localhost:8080, tự động gắn `Authorization: Bearer <crs_token>`
 - GET /api/courses : Tra cứu danh sách môn học kèm keyword, page, size (Hook useCourses)
-- POST /api/auth/login : Gửi thông tin đăng nhập và lưu JWT Token
+- POST /api/courses : Thêm môn học mới qua CourseForm (Controlled Component)
+- PUT /api/courses/{id} : Chỉnh sửa môn học qua CourseForm
+- DELETE /api/courses/{id} : Xóa môn học có hộp thoại xác nhận (window.confirm)
+- POST /api/auth/login : Gửi thông tin đăng nhập và lưu JWT Token vào localStorage
 - POST /api/registrations : Gửi yêu cầu đăng ký học phần kèm Bearer JWT
-- Quản lý 4 trạng thái giao diện: Loading, Success, Empty, Error (kèm nút Thử lại)
+- Quản lý 4 trạng thái giao diện: Loading (Skeleton), Success, Empty, Error (kèm nút Thử lại)
+- Đồng bộ dữ liệu: Tự động gọi `refetch()` cập nhật lại danh sách ngay sau khi Thêm/Sửa/Xóa

@@ -1,9 +1,9 @@
 1. Danh sách Service & Thành phần
 - api-gateway (8080): Điểm vào duy nhất, định tuyến (RewritePath), xác thực sơ bộ (AuthHeaderFilter), CORS.
 - auth-service (8081, auth_db): Quản lý User/Student, đăng nhập, phát hành và xác thực JWT.
-- course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang, quản lý số chỗ (reserve/release seat).
+- course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang, CRUD môn học, quản lý số chỗ (reserve/release seat).
 - registration-service (8083, registration_db): Quản lý Registration, gọi REST nội bộ sang course-service để giữ chỗ.
-- crs-frontend (5174/5173): Giao diện React, kết nối qua Gateway, tìm kiếm debounce, phân trang, xử lý 4 trạng thái (Loading, Success, Empty, Error).
+- crs-frontend (5174/5173): Giao diện React, form CRUD môn học (Controlled Component), tìm kiếm debounce, phân trang, xử lý 4 trạng thái và tự động đồng bộ refetch.
 
 2. Nguyên tắc sở hữu dữ liệu
 - Database-per-Service: Mỗi service sở hữu database riêng biệt (auth_db, course_db, registration_db).
@@ -12,6 +12,12 @@
 
 3. Phân luồng bảo mật tại Gateway
 - Public: /api/auth/login, GET /api/courses (xem & tìm kiếm môn học).
-- Protected (Bearer JWT): /api/registrations, POST/PUT/DELETE /api/courses.
+- Protected (Bearer JWT): /api/registrations, POST/PUT/DELETE /api/courses (yêu cầu ROLE_ADMIN).
 - Partner (API Key): /api/public/courses (xác thực qua Header X-API-KEY).
 - Internal: /internal/courses/** (chỉ gọi nội bộ giữa các service, không mở qua Gateway).
+
+4. Cơ chế đồng bộ trạng thái & Bảo vệ dữ liệu
+- Validation 2 lớp: Client-side validate tức thời tại CourseForm (chặn request rác) + Server-side validate (@Valid DTO tại backend).
+- Đính kèm Token tự động: Axios Request Interceptor tự đọc token `crs_token` từ localStorage.
+- Cập nhật thời gian thực: Gọi `refetch()` làm mới dữ liệu sau CRUD mà không cần tải lại toàn bộ trang (F5).
+- Xử lý lỗi phân tầng: Phân biệt lỗi nghiệp vụ ({message}), lỗi validation ({fieldName}), và lỗi phân quyền (401/403).
