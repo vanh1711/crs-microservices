@@ -27,13 +27,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép Public hoàn toàn cho GET /courses và /courses/**
+                        // 1. Cho phép gọi nội bộ giữa các microservice không qua Gateway
+                        .requestMatchers("/internal/**", "/internal/courses/**").permitAll()
+
+                        // 2. Cho phép Public hoàn toàn cho GET /courses và /courses/**
                         .requestMatchers(HttpMethod.GET, "/courses", "/courses/**").permitAll()
 
-                        // Yêu cầu ROLE_ADMIN cho POST /courses và /courses/**
+                        // 3. Yêu cầu ROLE_ADMIN cho các thao tác quản trị CRUD
                         .requestMatchers(HttpMethod.POST, "/courses", "/courses/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/courses", "/courses/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/courses", "/courses/**").hasAuthority("ROLE_ADMIN")
 
-                        // Các request khác bắt buộc có Token
+                        // 4. Các request khác bắt buộc có Token hợp lệ
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
