@@ -43,6 +43,8 @@ function App() {
                                     </ProtectedRoute>
                                 }
                             />
+                            {/* Catch-all: Tự động điều hướng mọi đường dẫn không tồn tại về /courses */}
+                            <Route path="*" element={<Navigate to="/courses" replace />} />
                         </Routes>
                     </main>
                 </div>
