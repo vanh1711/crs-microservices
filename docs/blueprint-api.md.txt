@@ -5,38 +5,37 @@
 - /api/registrations -> Chuyển tiếp tới registration-service:8083 (/registrations)
 - /api/registrations/** -> Chuyển tiếp tới registration-service:8083 (/registrations/**)
 - /api/public/courses -> Chuyển tiếp tới course-service:8082 (/courses, xác thực X-API-KEY)
-- AuthHeaderFilter: Kiểm tra Bearer JWT với các route bảo vệ, bỏ qua Login và GET /api/courses
+- AuthHeaderFilter: Bỏ qua Login và GET /api/courses; bắt buộc Bearer JWT với các route khác
 
 2. auth-service (cổng 8081, tiền tố Gateway: /api/auth)
-- POST /auth/login : Đăng nhập tài khoản admin/student, trả về JWT Token và Role
+- POST /auth/login : Đăng nhập, trả về { userId, token (chứa claim userId & role), username, role }
 
 3. course-service (cổng 8082, tiền tố Gateway: /api/courses)
-- GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (page, size - mặc định 5 môn/trang)
-- GET /courses/{id} : Xem chi tiết một môn học
-- POST /courses : Thêm môn học mới (yêu cầu ROLE_ADMIN & Bearer JWT)
-- PUT /courses/{id} : Cập nhật thông tin môn học (yêu cầu ROLE_ADMIN & Bearer JWT)
-- DELETE /courses/{id} : Xóa môn học theo ID (yêu cầu ROLE_ADMIN & Bearer JWT)
-- PATCH /internal/courses/{id}/reserve-seat : Giữ chỗ, trừ số lượng chỗ trống (gọi nội bộ)
-- PATCH /internal/courses/{id}/release-seat : Nhả chỗ, hoàn lại chỗ trống khi hủy (gọi nội bộ)
-- GET /api/public/courses : API cung cấp cho đối tác (yêu cầu X-API-KEY)
+- GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (mặc định 5 môn/trang)
+- GET /courses/{id} : Xem chi tiết môn học (Public cho Frontend ghép tên môn)
+- POST /courses : Thêm môn học mới (ROLE_ADMIN & Bearer JWT)
+- PUT /courses/{id} : Cập nhật môn học (ROLE_ADMIN & Bearer JWT)
+- DELETE /courses/{id} : Xóa môn học (ROLE_ADMIN & Bearer JWT)
+- PATCH /internal/courses/{id}/reserve-seat : Giữ chỗ, giảm số chỗ trống (gọi nội bộ)
+- PATCH /internal/courses/{id}/release-seat : Nhả chỗ, tăng số chỗ trống khi hủy đăng ký (gọi nội bộ)
+- GET /api/public/courses : API đối tác (yêu cầu X-API-KEY)
 
 4. registration-service (cổng 8083, tiền tố Gateway: /api/registrations)
-- POST /registrations : Đăng ký môn học (gọi sang course-service để giữ chỗ)
-- GET /registrations/student/{studentId} : Danh sách môn học đã đăng ký theo sinh viên
+- POST /registrations : Đăng ký môn học (kiểm tra trùng, gọi reserve-seat sang course-service, lưu trạng thái DA_DANG_KY)
+- GET /registrations/my : Lấy danh sách đăng ký của sinh viên hiện tại (trích xuất studentId từ JWT Authentication, chống IDOR)
+- DELETE /registrations/{id} : Hủy đăng ký học phần (gọi release-seat sang course-service, cập nhật trạng thái DA_HUY)
 
 5. crs-frontend (cổng 5174/5173 - Giao diện người dùng & Điều hướng Route)
 - Cấu hình Router (react-router-dom):
-  + /login : Trang đăng nhập hệ thống (LoginPage)
-  + /courses : Trang xem danh sách môn học công khai (CoursesPage)
-  + /admin/courses : Trang quản trị môn học CRUD (AdminCoursesPage - ProtectedRoute ROLE_ADMIN)
-  + /register-course : Khung trang đăng ký môn học (RegisterCoursePage - ProtectedRoute ROLE_STUDENT)
+  + /login : Trang đăng nhập (LoginPage)
+  + /courses : Danh sách môn học công khai (CoursesPage)
+  + /admin/courses : Quản trị môn học CRUD (AdminCoursesPage - ROLE_ADMIN)
+  + /register-course : Đăng ký học phần (RegisterCoursePage - ROLE_STUDENT, cập nhật số chỗ tức thời)
+  + /my-registrations : Môn học đã đăng ký (MyRegistrationsPage - ROLE_STUDENT, API composition ghép tên môn học song song, hủy đăng ký)
+- Quản lý phiên xác thực (AuthContext):
+  + Lưu và khôi phục `{ id, username, role }` và `crs_token` từ localStorage
+- Thông báo nổi (Toast & useToast):
+  + Tự động biến mất sau 3.5s, hiển thị thông báo thành công hoặc lỗi nghiệp vụ (hết chỗ, trùng đăng ký)
 - Axios Client & Interceptors:
-  + Request Interceptor: Tự động đính kèm `Authorization: Bearer <crs_token>`
-  + Response Interceptor: Bắt lỗi HTTP 401 (token hết hạn/hỏng) -> tự động xóa token và chuyển hướng về /login
-- Quản lý phiên đăng nhập (AuthContext):
-  + Lưu trữ và khôi phục phiên từ `localStorage` (key: `crs_token`, `crs_user`) khi F5 trang
-  + Cung cấp `user`, `login()`, `logout()`, `isAuthenticated`
-- Role-Based UI:
-  + Navbar: Ẩn/hiện menu điều hướng tương ứng theo vai trò (ADMIN / STUDENT / Khách)
-  + CourseList: Ẩn cột "Thao tác" (Sửa/Xóa) khi ở trang công khai /courses
-  + Phân trang & Tìm kiếm: Hook useCourses (size = 5 môn/trang, debounce 400ms, 4 trạng thái hiển thị)
+  + Request Interceptor: Đính kèm `Authorization: Bearer <crs_token>`
+  + Response Interceptor: Bắt lỗi 401 -> tự động xóa token và chuyển hướng về /login

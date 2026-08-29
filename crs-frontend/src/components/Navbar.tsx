@@ -46,12 +46,20 @@ export default function Navbar() {
                     )}
 
                     {isAuthenticated && user?.role === 'STUDENT' && (
-                        <Link 
-                            to="/register-course" 
-                            className={`nav-link ${isActive('/register-course') ? 'active' : ''}`}
-                        >
-                            Đăng ký học phần
-                        </Link>
+                        <>
+                            <Link 
+                                to="/register-course" 
+                                className={`nav-link ${isActive('/register-course') ? 'active' : ''}`}
+                            >
+                                Đăng ký học phần
+                            </Link>
+                            <Link 
+                                to="/my-registrations" 
+                                className={`nav-link ${isActive('/my-registrations') ? 'active' : ''}`}
+                            >
+                                Môn học đã đăng ký
+                            </Link>
+                        </>
                     )}
                 </div>
 

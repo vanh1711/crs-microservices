@@ -1,33 +1,94 @@
+import { useState, useCallback } from 'react';
+import axios from 'axios';
+import { useCourses } from '../api/useCourses';
+import { registerCourse } from '../api/registrationApi';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../hooks/useToast';
+import SearchBox from '../components/SearchBox';
+import CourseList from '../components/CourseList';
+import Pagination from '../components/Pagination';
+import Toast from '../components/Toast';
+import type { Course } from '../types/course';
+import type { ApiErrorResponse } from '../types/apiError';
+
 export default function RegisterCoursePage() {
+    const [keyword, setKeyword] = useState('');
+    const [page, setPage] = useState(0);
+    const [registeringId, setRegisteringId] = useState<number | null>(null);
+
+    const { user } = useAuth();
+    const { toast, showToast, clearToast } = useToast();
+    const { courses, totalPages, state, errorMessage, refetch } = useCourses(keyword, page);
+
+    const handleSearch = useCallback((newKeyword: string) => {
+        setKeyword((prevKeyword) => {
+            if (prevKeyword !== newKeyword) {
+                setPage(0);
+                return newKeyword;
+            }
+            return prevKeyword;
+        });
+    }, []);
+
+    const handleRegister = async (course: Course) => {
+        if (!user) return;
+        setRegisteringId(course.id);
+        try {
+            await registerCourse({ studentId: user.id, courseId: course.id });
+            showToast(`Đăng ký thành công môn "${course.tenMonHoc}"`, 'success');
+            refetch(); // Tải lại danh sách để cập nhật số chỗ còn lại mới nhất
+        } catch (err) {
+            // Lỗi có thể từ registration-service ("Sinh vien da dang ky...")
+            // hoặc lan truyền từ course-service ("Mon hoc da het cho...")
+            let message = 'Đăng ký không thành công, vui lòng thử lại.';
+            if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data?.message) {
+                message = err.response.data.message;
+            } else if (axios.isAxiosError(err) && err.response?.status === 403) {
+                message = 'Bạn không có quyền thực hiện đăng ký (cần tài khoản STUDENT).';
+            }
+            showToast(message, 'error');
+        } finally {
+            setRegisteringId(null);
+        }
+    };
+
     return (
         <div className="page-container animate-fade-in">
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Đăng Ký Học Phần</h1>
-                    <p className="page-subtitle">Dành riêng cho sinh viên đã đăng nhập vào hệ thống</p>
+                    <p className="page-subtitle">Chọn học phần trong danh sách để đăng ký tham gia lớp học</p>
                 </div>
+                {user && (
+                    <div className="badge badge-success" style={{ padding: '6px 14px', fontSize: '13px' }}>
+                        🎓 Sinh viên: <strong>{user.username}</strong> (ID: #{user.id})
+                    </div>
+                )}
             </div>
 
-            <div className="table-card" style={{ padding: '40px 24px', textAlign: 'center' }}>
-                <div className="state-icon" style={{ background: '#e0e7ff', color: '#4f46e5', margin: '0 auto 16px' }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', color: '#1e293b' }}>
-                    Cổng Đăng Ký Học Phần Trực Tuyến
-                </h3>
-                <p style={{ color: '#64748b', fontSize: '14px', maxWidth: '420px', margin: '0 auto 20px' }}>
-                    Chức năng này sẽ được tích hợp gọi sang <code>registration-service</code> và <code>course-service</code> hoàn chỉnh trong các buổi tiếp theo.
-                </p>
-                <div className="badge badge-success" style={{ padding: '6px 14px', fontSize: '12px' }}>
-                    ✅ Đã bảo vệ bằng ProtectedRoute (ROLE_STUDENT)
-                </div>
+            <SearchBox 
+                onSearch={handleSearch} 
+                totalResults={state === 'success' ? courses.length : undefined} 
+            />
+
+            <div style={{ marginTop: 16 }}>
+                <CourseList
+                    courses={courses}
+                    state={state}
+                    errorMessage={errorMessage}
+                    onRetry={refetch}
+                    onRegister={handleRegister}
+                    registeringId={registeringId}
+                />
             </div>
+
+            <Pagination 
+                currentPage={page} 
+                totalPages={totalPages} 
+                onPageChange={setPage} 
+            />
+
+            {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
         </div>
     );
 }

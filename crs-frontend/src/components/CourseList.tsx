@@ -8,6 +8,8 @@ interface CourseListProps {
     onRetry: () => void;
     onEdit?: (course: Course) => void;
     onDelete?: (course: Course) => void;
+    onRegister?: (course: Course) => void;
+    registeringId?: number | null;
 }
 
 export default function CourseList({
@@ -17,8 +19,10 @@ export default function CourseList({
     onRetry,
     onEdit,
     onDelete,
+    onRegister,
+    registeringId,
 }: CourseListProps) {
-    const showActions = !!onEdit || !!onDelete;
+    const showActions = !!onEdit || !!onDelete || !!onRegister;
 
     if (state === 'loading') {
         return (
@@ -122,7 +126,7 @@ export default function CourseList({
                         <th>Môn học</th>
                         <th style={{ width: '130px', textAlign: 'center' }}>Số tín chỉ</th>
                         <th style={{ width: '180px' }}>Số chỗ còn lại</th>
-                        {showActions && <th style={{ width: '140px', textAlign: 'right' }}>Thao tác</th>}
+                        {showActions && <th style={{ width: '150px', textAlign: 'right' }}>Thao tác</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -144,6 +148,9 @@ export default function CourseList({
                             barColor = '#f59e0b';
                             statusText = `Sắp hết (${course.soChoConLai})`;
                         }
+
+                        const isRegistering = registeringId === course.id;
+                        const isFull = course.soChoConLai === 0;
 
                         return (
                             <tr key={course.id}>
@@ -211,6 +218,34 @@ export default function CourseList({
                                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                                     </svg>
                                                     <span>Xóa</span>
+                                                </button>
+                                            )}
+                                            {onRegister && (
+                                                <button 
+                                                    type="button"
+                                                    className={`btn-table-action btn-register ${isFull ? 'btn-disabled' : ''}`}
+                                                    onClick={() => onRegister(course)}
+                                                    disabled={isFull || isRegistering}
+                                                    title={isFull ? 'Môn học đã hết chỗ' : 'Đăng ký học phần này'}
+                                                >
+                                                    {isRegistering ? (
+                                                        <>
+                                                            <span className="spinner" style={{ width: 11, height: 11 }}></span>
+                                                            <span>Đang ĐK...</span>
+                                                        </>
+                                                    ) : isFull ? (
+                                                        <span>Hết chỗ</span>
+                                                    ) : (
+                                                        <>
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                                <circle cx="8.5" cy="7.5" r="4"></circle>
+                                                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                                                            </svg>
+                                                            <span>Đăng ký</span>
+                                                        </>
+                                                    )}
                                                 </button>
                                             )}
                                         </div>

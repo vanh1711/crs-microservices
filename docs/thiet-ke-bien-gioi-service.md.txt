@@ -1,26 +1,23 @@
 1. Danh sách Service & Thành phần
 - api-gateway (8080): Điểm vào duy nhất, định tuyến (RewritePath), xác thực sơ bộ (AuthHeaderFilter), CORS.
-- auth-service (8081, auth_db): Quản lý User/Student, đăng nhập, phát hành và xác thực JWT.
-- course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang (5 môn/trang), CRUD môn học, quản lý số chỗ (reserve/release seat).
-- registration-service (8083, registration_db): Quản lý Registration, gọi REST nội bộ sang course-service để giữ chỗ.
-- crs-frontend (5174/5173): Ứng dụng SPA đa trang (Router), quản lý phiên xác thực toàn cục (AuthContext), bảo vệ Route (ProtectedRoute), tự động đính kèm và xử lý hết hạn Token qua Axios Interceptors.
+- auth-service (8081, auth_db): Quản lý User/Student, đăng nhập, phát hành JWT mang claim userId & role.
+- course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang (5 môn/trang), CRUD môn học, quản lý số chỗ (reserve/release seat nội bộ).
+- registration-service (8083, registration_db): Quản lý Registration, gọi REST nội bộ sang course-service để giữ/nhả chỗ, cung cấp API đăng ký/hủy và xem môn của tôi.
+- crs-frontend (5174/5173): SPA đa trang, quản lý phiên toàn cục (AuthContext), bảo vệ Route, Toast thông báo, tự động làm mới dữ liệu sau thao tác (không cần F5).
 
-2. Nguyên tắc sở hữu dữ liệu
+2. Nguyên tắc sở hữu dữ liệu & Bảo mật IDOR
 - Database-per-Service: Mỗi service sở hữu database riêng biệt (auth_db, course_db, registration_db).
 - Bảng course_db.course: id, ten_mon_hoc, so_tin_chi, so_cho_toi_da, so_cho_con_lai.
-- Tuyệt đối KHÔNG truy cập trực tiếp hoặc join chéo DB của service khác.
-- Trao đổi hoặc thay đổi dữ liệu liên service bắt buộc phải gọi qua REST API.
+- Bảng registration_db.registrations: id, student_id, course_id, ngay_dang_ky, trang_thai (DA_DANG_KY / DA_HUY).
+- Nguyên tắc chống IDOR: Endpoint GET /registrations/my tự động lấy studentId từ JWT token đã xác thực (Authentication credentials), không tin tưởng query param từ client.
+- Trao đổi dữ liệu liên service bắt buộc phải gọi qua REST API.
 
-3. Phân luồng bảo mật tại Gateway & Frontend
-- Public: /api/auth/login, GET /api/courses (xem & tìm kiếm môn học).
-- Protected (Bearer JWT): /api/registrations (STUDENT), POST/PUT/DELETE /api/courses (ADMIN).
-- Partner (API Key): /api/public/courses (xác thực qua Header X-API-KEY).
-- Internal: /internal/courses/** (chỉ gọi nội bộ giữa các service, không mở qua Gateway).
-- Frontend Route Guarding: ProtectedRoute chặn người dùng chưa đăng nhập hoặc sai vai trò truy cập trang trái phép.
+3. Kỹ thuật ghép dữ liệu (API Composition tại Frontend)
+- Khi hiển thị môn học đã đăng ký: Frontend gọi GET /api/registrations/my, sau đó gọi song song Promise.all(GET /api/courses/{id}) qua Gateway để ghép thông tin tên môn học mà không cần sửa DB backend.
 
 4. Cơ chế đồng bộ trạng thái, Interceptors & Xử lý lỗi
-- Validation 2 lớp: Client-side validate tức thời tại CourseForm + Server-side validate (@Valid DTO tại backend).
-- Request Interceptor: Tự động trích xuất `crs_token` từ localStorage gắn vào Header Authorization.
-- Response Interceptor: Bắt lỗi 401 (token hết hạn) -> tự động dọn dẹp localStorage và đưa về trang /login (không tự đăng xuất với lỗi 403 sai role).
-- Role-Based UI: Ẩn/hiện các nút thao tác Sửa/Xóa và menu chức năng tương ứng theo role (ADMIN / STUDENT).
-- Cập nhật thời gian thực: Gọi `refetch()` làm mới dữ liệu sau CRUD mà không cần tải lại toàn bộ trang (F5).
+- Validation 2 lớp: Client-side validate tức thời + Server-side validate (@Valid DTO tại backend).
+- Request Interceptor: Tự động trích xuất `crs_token` gắn vào Header Authorization.
+- Response Interceptor: Bắt lỗi 401 (token hết hạn) -> tự động dọn dẹp localStorage và đưa về trang /login.
+- Xử lý lỗi nghiệp vụ thống nhất: Đọc trực tiếp `err.response.data.message` cho cả lỗi từ registration-service (trùng môn) lẫn lan truyền từ course-service (hết chỗ).
+- Cập nhật thời gian thực: Tự động gọi `refetch()` hoặc `loadData()` cập nhật số chỗ/danh sách ngay khi đăng ký hoặc hủy thành công.
