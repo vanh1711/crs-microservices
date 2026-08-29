@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { LoginResponse } from '../types/auth';
 
 export interface AuthUser {
@@ -20,22 +20,22 @@ const TOKEN_KEY = 'crs_token';
 const USER_KEY = 'crs_user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
-
-    // Khôi phục phiên đăng nhập khi F5 trang (đọc lại từ localStorage)
-    useEffect(() => {
+    // Khởi tạo state đồng bộ trực tiếp từ localStorage ngay từ lần render đầu tiên
+    const [user, setUser] = useState<AuthUser | null>(() => {
         const savedUser = localStorage.getItem(USER_KEY);
         const savedToken = localStorage.getItem(TOKEN_KEY);
         if (savedUser && savedToken) {
             try {
-                setUser(JSON.parse(savedUser));
+                return JSON.parse(savedUser);
             } catch (e) {
                 console.error('Lỗi phân tích crs_user từ localStorage', e);
                 localStorage.removeItem(USER_KEY);
                 localStorage.removeItem(TOKEN_KEY);
+                return null;
             }
         }
-    }, []);
+        return null;
+    });
 
     const login = (data: LoginResponse) => {
         localStorage.setItem(TOKEN_KEY, data.token);
