@@ -31,8 +31,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+        if (authHeader != null && authHeader.toLowerCase().startsWith("bearer ")) {
+            String token = authHeader.substring(7).trim();
             try {
                 SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
                 Claims claims = Jwts.parser()
@@ -43,6 +43,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);
+                
+                Object userIdObj = claims.get("userId");
+                Long userId = null;
+                if (userIdObj instanceof Number) {
+                    userId = ((Number) userIdObj).longValue();
+                }
 
                 // Chuẩn hóa role: Đảm bảo có tiền tố ROLE_ cho Spring Security
                 if (role != null && !role.startsWith("ROLE_")) {
@@ -50,7 +56,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
 
                 var authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, List.of(new SimpleGrantedAuthority(role))
+                        username, userId, List.of(new SimpleGrantedAuthority(role != null ? role : "ROLE_STUDENT"))
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
