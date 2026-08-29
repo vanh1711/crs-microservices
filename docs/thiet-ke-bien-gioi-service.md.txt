@@ -15,9 +15,13 @@
 3. Kỹ thuật ghép dữ liệu (API Composition tại Frontend)
 - Khi hiển thị môn học đã đăng ký: Frontend gọi GET /api/registrations/my, sau đó gọi song song Promise.all(GET /api/courses/{id}) qua Gateway để ghép thông tin tên môn học mà không cần sửa DB backend.
 
-4. Cơ chế đồng bộ trạng thái, Interceptors & Xử lý lỗi
+4. Cơ chế đồng bộ trạng thái, Interceptors & Khả năng chịu lỗi (Resilience)
 - Validation 2 lớp: Client-side validate tức thời + Server-side validate (@Valid DTO tại backend).
 - Request Interceptor: Tự động trích xuất `crs_token` gắn vào Header Authorization.
 - Response Interceptor: Bắt lỗi 401 (token hết hạn) -> tự động dọn dẹp localStorage và đưa về trang /login.
-- Xử lý lỗi nghiệp vụ thống nhất: Đọc trực tiếp `err.response.data.message` cho cả lỗi từ registration-service (trùng môn) lẫn lan truyền từ course-service (hết chỗ).
-- Cập nhật thời gian thực: Tự động gọi `refetch()` hoặc `loadData()` cập nhật số chỗ/danh sách ngay khi đăng ký hoặc hủy thành công.
+- Xử lý lỗi nghiệp vụ thống nhất: Đọc trực tiếp `err.response.data.message` cho cả lỗi từ registration-service (trùng môn) lẫn lan truyền từ course-service (hết chỗ, service down).
+- Kịch bản sự cố phân tán: Khi course-service sập, registration-service bắt ResourceAccessException và trả về JSON lỗi 409 qua GlobalExceptionHandler, hiển thị Toast đỏ trên Frontend mà không làm crash hệ thống.
+
+5. Triển khai Docker Compose & Đóng gói container
+- Đổi localhost thành tên service container trong mạng nội bộ Docker.
+- Toàn bộ service cấu hình linh hoạt theo biến môi trường `${ENV_VAR:default_value}`.

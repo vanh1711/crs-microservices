@@ -1,0 +1,108 @@
+# path: docker-compose.yml
+# purpose: Dinh nghia 5 thanh phan microservices + 3 database MySQL cho toan bo he thong CRS
+
+version: '3.8'
+
+services:
+  mysql-auth:
+    image: mysql:8.0
+    container_name: crs-mysql-auth
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: auth_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - auth_db_data:/var/lib/mysql
+
+  mysql-course:
+    image: mysql:8.0
+    container_name: crs-mysql-course
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: course_db
+    ports:
+      - "3308:3306"
+    volumes:
+      - course_db_data:/var/lib/mysql
+
+  mysql-registration:
+    image: mysql:8.0
+    container_name: crs-mysql-registration
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: registration_db
+    ports:
+      - "3309:3306"
+    volumes:
+      - registration_db_data:/var/lib/mysql
+
+  auth-service:
+    build:
+      context: ./auth-service/auth-service
+    container_name: crs-auth-service
+    depends_on:
+      - mysql-auth
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      JWT_SECRET: CRS-Microservices-Secret-Key-Nam-3-Hoc-Ky-2026-Doi-Trong-Thuc-Te
+    ports:
+      - "8081:8081"
+
+  course-service:
+    build:
+      context: ./course-service/course-service
+    container_name: crs-course-service
+    depends_on:
+      - mysql-course
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-course:3306/course_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      JWT_SECRET: CRS-Microservices-Secret-Key-Nam-3-Hoc-Ky-2026-Doi-Trong-Thuc-Te
+    ports:
+      - "8082:8082"
+
+  registration-service:
+    build:
+      context: ./registration-service/registration-service
+    container_name: crs-registration-service
+    depends_on:
+      - mysql-registration
+      - course-service
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-registration:3306/registration_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      COURSE_SERVICE_BASE_URL: http://course-service:8082
+      JWT_SECRET: CRS-Microservices-Secret-Key-Nam-3-Hoc-Ky-2026-Doi-Trong-Thuc-Te
+    ports:
+      - "8083:8083"
+
+  api-gateway:
+    build:
+      context: ./api-gateway/api-gateway
+    container_name: crs-api-gateway
+    depends_on:
+      - auth-service
+      - course-service
+      - registration-service
+    environment:
+      SERVER_PORT: 8080
+      AUTH_SERVICE_URL: http://auth-service:8081
+      COURSE_SERVICE_URL: http://course-service:8082
+      REGISTRATION_SERVICE_URL: http://registration-service:8083
+      JWT_SECRET: CRS-Microservices-Secret-Key-Nam-3-Hoc-Ky-2026-Doi-Trong-Thuc-Te
+      PARTNER_API_KEY: crs-partner-key-2026
+    ports:
+      - "8080:8080"
+
+volumes:
+  auth_db_data:
+  course_db_data:
+  registration_db_data:

@@ -16,8 +16,8 @@
 - POST /courses : Thêm môn học mới (ROLE_ADMIN & Bearer JWT)
 - PUT /courses/{id} : Cập nhật môn học (ROLE_ADMIN & Bearer JWT)
 - DELETE /courses/{id} : Xóa môn học (ROLE_ADMIN & Bearer JWT)
-- PATCH /internal/courses/{id}/reserve-seat : Giữ chỗ, giảm số chỗ trống (gọi nội bộ)
-- PATCH /internal/courses/{id}/release-seat : Nhả chỗ, tăng số chỗ trống khi hủy đăng ký (gọi nội bộ)
+- PATCH /internal/courses/{id}/reserve-seat : Giữ chỗ, giảm số chỗ trống (gọi nội bộ, permitAll)
+- PATCH /internal/courses/{id}/release-seat : Nhả chỗ, tăng số chỗ trống khi hủy đăng ký (gọi nội bộ, permitAll)
 - GET /api/public/courses : API đối tác (yêu cầu X-API-KEY)
 
 4. registration-service (cổng 8083, tiền tố Gateway: /api/registrations)
@@ -32,6 +32,7 @@
   + /admin/courses : Quản trị môn học CRUD (AdminCoursesPage - ROLE_ADMIN)
   + /register-course : Đăng ký học phần (RegisterCoursePage - ROLE_STUDENT, cập nhật số chỗ tức thời)
   + /my-registrations : Môn học đã đăng ký (MyRegistrationsPage - ROLE_STUDENT, API composition ghép tên môn học song song, hủy đăng ký)
+  + * (Catch-all) : Tự động điều hướng mọi URL không tồn tại về /courses
 - Quản lý phiên xác thực (AuthContext):
   + Lưu và khôi phục `{ id, username, role }` và `crs_token` từ localStorage
 - Thông báo nổi (Toast & useToast):
@@ -39,3 +40,7 @@
 - Axios Client & Interceptors:
   + Request Interceptor: Đính kèm `Authorization: Bearer <crs_token>`
   + Response Interceptor: Bắt lỗi 401 -> tự động xóa token và chuyển hướng về /login
+
+6. Triển khai Docker Compose & Biến môi trường (Buổi 10)
+- Tất cả các service hỗ trợ ghi đè cấu hình qua `${ENV_VAR:default_value}`
+- docker-compose.yml: Đóng gói 4 backend services + 3 container MySQL 8 (auth_db, course_db, registration_db)
