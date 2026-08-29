@@ -1,8 +1,6 @@
 # path: docker-compose.yml
 # purpose: Dinh nghia tron ven 5 container microservices + 3 database MySQL 8 co Healthcheck, Restart Policy, Named Volumes
 
-version: '3.8'
-
 services:
   # =========================================================================
   # 1. DATABASE CONTAINERS (MySQL 8 with Healthchecks & Volumes)
