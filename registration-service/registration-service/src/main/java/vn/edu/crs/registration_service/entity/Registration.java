@@ -1,58 +1,31 @@
 package vn.edu.crs.registration_service.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "registrations")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Registration {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String studentId;
+    @Column(nullable = false)
+    private Long studentId;
+
+    @Column(nullable = false)
     private Long courseId;
-    private LocalDateTime registeredAt;
 
-    public Registration() {
-    }
+    @Column(nullable = false)
+    private LocalDateTime ngayDangKy;
 
-    public Registration(String studentId, Long courseId, LocalDateTime registeredAt) {
-        this.studentId = studentId;
-        this.courseId = courseId;
-        this.registeredAt = registeredAt;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getStudentId() {
-        return studentId;
-    }
-
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
-    }
-
-    public Long getCourseId() {
-        return courseId;
-    }
-
-    public void setCourseId(Long courseId) {
-        this.courseId = courseId;
-    }
-
-    public LocalDateTime getRegisteredAt() {
-        return registeredAt;
-    }
-
-    public void setRegisteredAt(LocalDateTime registeredAt) {
-        this.registeredAt = registeredAt;
-    }
+    @Column(nullable = false, length = 20)
+    private String trangThai; // "DA_DANG_KY", "DA_HUY"
 }
