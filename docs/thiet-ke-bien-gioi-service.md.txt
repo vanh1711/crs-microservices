@@ -1,12 +1,13 @@
 1. Danh sách Service & Thành phần
-- api-gateway (8080): Điểm vào duy nhất, định tuyến (RewritePath), xác thực sơ bộ (AuthHeaderFilter), CORS.
-- auth-service (8081, auth_db): Quản lý User/Student, đăng nhập, phát hành JWT mang claim userId & role.
+- api-gateway (8080): Điểm vào duy nhất, định tuyến (RewritePath), xác thực sơ bộ (AuthHeaderFilter), xác thực API Key đối tác động có cache (ApiKeyFilter), CORS.
+- auth-service (8081, auth_db): Quản lý User/Student, phát hành JWT, quản trị và xác thực API Key đối tác (ApiKey).
 - course-service (8082, course_db): Quản lý Course, tìm kiếm, phân trang (5 môn/trang), CRUD môn học, quản lý số chỗ (reserve/release seat nội bộ).
 - registration-service (8083, registration_db): Quản lý Registration, gọi REST nội bộ sang course-service để giữ/nhả chỗ, cung cấp API đăng ký/hủy và xem môn của tôi.
-- crs-frontend (5174/5173): SPA đa trang, quản lý phiên toàn cục (AuthContext), bảo vệ Route, Toast thông báo, tự động làm mới dữ liệu sau thao tác (không cần F5).
+- crs-frontend (5174/5173): SPA đa trang, quản lý phiên toàn cục (AuthContext), bảo vệ Route, trang quản trị API Key (Admin), Toast thông báo, tự động làm mới dữ liệu sau thao tác (không cần F5).
 
 2. Nguyên tắc sở hữu dữ liệu & Bảo mật IDOR
 - Database-per-Service: Mỗi service sở hữu database riêng biệt (auth_db, course_db, registration_db).
+- Bảng auth_db.api_key: id, key_value, owner_name, scopes, status (ACTIVE/REVOKED), expires_at, created_at.
 - Bảng course_db.course: id, ten_mon_hoc, so_tin_chi, so_cho_toi_da, so_cho_con_lai.
 - Bảng registration_db.registrations: id, student_id, course_id, ngay_dang_ky, trang_thai (DA_DANG_KY / DA_HUY).
 - Nguyên tắc chống IDOR: Endpoint GET /registrations/my tự động lấy studentId từ JWT token đã xác thực (Authentication credentials), không tin tưởng query param từ client.
@@ -25,3 +26,9 @@
 5. Triển khai Docker Compose & Đóng gói container
 - Đổi localhost thành tên service container trong mạng nội bộ Docker.
 - Toàn bộ service cấu hình linh hoạt theo biến môi trường `${ENV_VAR:default_value}`.
+
+6. Quản lý API Key & Biên giới xác thực đối tác (Buổi bổ sung)
+- auth-service sở hữu thực thể ApiKey (bảng auth_db.api_key), chịu trách nhiệm sinh key bí mật (SecureRandom), phân quyền scope và kiểm tra hạn dùng.
+- Tách biệt API công khai và nội bộ: Endpoint /internal/api-keys/validate chỉ gọi trong mạng nội bộ giữa Gateway và auth-service, không định tuyến qua Gateway ra ngoài.
+- Đánh đổi hiệu năng & tính nhất quán (Gateway Cache TTL 30s): Giảm tải tối đa cho auth-service, chấp nhận độ trễ nhận diện thu hồi tối đa 30 giây.
+- Nguyên tắc an toàn dự phòng (Fail-Safe): Khi auth-service gặp sự cố hoặc timeout, Gateway mặc định từ chối (HTTP 403) thay vì cho phép request đi qua.

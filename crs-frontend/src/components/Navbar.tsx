@@ -37,12 +37,20 @@ export default function Navbar() {
                     </Link>
 
                     {isAuthenticated && user?.role === 'ADMIN' && (
-                        <Link 
-                            to="/admin/courses" 
-                            className={`nav-link ${isActive('/admin/courses') ? 'active' : ''}`}
-                        >
-                            Quản trị môn học
-                        </Link>
+                        <>
+                            <Link 
+                                to="/admin/courses" 
+                                className={`nav-link ${isActive('/admin/courses') ? 'active' : ''}`}
+                            >
+                                Quản trị môn học
+                            </Link>
+                            <Link 
+                                to="/admin/api-keys" 
+                                className={`nav-link ${isActive('/admin/api-keys') ? 'active' : ''}`}
+                            >
+                                Quản lý API Key
+                            </Link>
+                        </>
                     )}
 
                     {isAuthenticated && user?.role === 'STUDENT' && (

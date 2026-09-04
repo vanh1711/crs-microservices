@@ -1,14 +1,20 @@
 1. api-gateway (cổng 8080 - Cổng tiếp nhận và định tuyến tập trung)
 - /api/auth/** -> Chuyển tiếp tới auth-service:8081 (/auth/**)
+- /api/api-keys/** & /api/api-keys -> Chuyển tiếp tới auth-service:8081 (/api-keys)
 - /api/courses -> Chuyển tiếp tới course-service:8082 (/courses)
 - /api/courses/** -> Chuyển tiếp tới course-service:8082 (/courses/**)
 - /api/registrations -> Chuyển tiếp tới registration-service:8083 (/registrations)
 - /api/registrations/** -> Chuyển tiếp tới registration-service:8083 (/registrations/**)
-- /api/public/courses -> Chuyển tiếp tới course-service:8082 (/courses, xác thực X-API-KEY)
-- AuthHeaderFilter: Bỏ qua Login và GET /api/courses; bắt buộc Bearer JWT với các route khác
+- /api/public/courses -> Chuyển tiếp tới course-service:8082 (/courses, kiểm tra động X-API-KEY qua ApiKeyFilter)
+- ApiKeyFilter: Kiểm tra X-API-KEY động qua auth-service (WebClient reactive), cache in-memory 30s (ApiKeyValidationCache), cơ chế fail-safe trả 403 nếu auth-service mất kết nối
+- AuthHeaderFilter: Bỏ qua Login và GET /api/courses; bắt buộc Bearer JWT với các route nghiệp vụ khác
 
-2. auth-service (cổng 8081, tiền tố Gateway: /api/auth)
+2. auth-service (cổng 8081, tiền tố Gateway: /api/auth và /api/api-keys)
 - POST /auth/login : Đăng nhập, trả về { userId, token (chứa claim userId & role), username, role }
+- GET /api-keys : Lấy danh sách API Key (ROLE_ADMIN & Bearer JWT qua JwtAuthFilter)
+- POST /api-keys : Cấp mới API Key (ROLE_ADMIN & Bearer JWT, sinh ngẫu nhiên qua SecureRandom, tiền tố crs_)
+- DELETE /api-keys/{id} : Thu hồi API Key (ROLE_ADMIN & Bearer JWT, đổi trạng thái sang REVOKED)
+- GET /internal/api-keys/validate : Endpoint nội bộ kiểm tra hợp lệ và phân quyền theo scope cho api-gateway (permitAll)
 
 3. course-service (cổng 8082, tiền tố Gateway: /api/courses)
 - GET /courses : Danh sách môn học, tìm kiếm theo keyword, phân trang (mặc định 5 môn/trang)
@@ -18,7 +24,7 @@
 - DELETE /courses/{id} : Xóa môn học (ROLE_ADMIN & Bearer JWT)
 - PATCH /internal/courses/{id}/reserve-seat : Giữ chỗ, giảm số chỗ trống (gọi nội bộ, permitAll)
 - PATCH /internal/courses/{id}/release-seat : Nhả chỗ, tăng số chỗ trống khi hủy đăng ký (gọi nội bộ, permitAll)
-- GET /api/public/courses : API đối tác (yêu cầu X-API-KEY)
+- GET /api/public/courses : API đối tác (yêu cầu X-API-KEY với scope courses:read)
 
 4. registration-service (cổng 8083, tiền tố Gateway: /api/registrations)
 - POST /registrations : Đăng ký môn học (kiểm tra trùng, gọi reserve-seat sang course-service, lưu trạng thái DA_DANG_KY)
@@ -30,6 +36,7 @@
   + /login : Trang đăng nhập (LoginPage)
   + /courses : Danh sách môn học công khai (CoursesPage)
   + /admin/courses : Quản trị môn học CRUD (AdminCoursesPage - ROLE_ADMIN)
+  + /admin/api-keys : Quản trị API Key đối tác (ApiKeysPage - ROLE_ADMIN, hiển thị key 1 lần duy nhất, thu hồi tức thời)
   + /register-course : Đăng ký học phần (RegisterCoursePage - ROLE_STUDENT, cập nhật số chỗ tức thời)
   + /my-registrations : Môn học đã đăng ký (MyRegistrationsPage - ROLE_STUDENT, API composition ghép tên môn học song song, hủy đăng ký)
   + * (Catch-all) : Tự động điều hướng mọi URL không tồn tại về /courses
@@ -44,3 +51,9 @@
 6. Triển khai Docker Compose & Biến môi trường (Buổi 10)
 - Tất cả các service hỗ trợ ghi đè cấu hình qua `${ENV_VAR:default_value}`
 - docker-compose.yml: Đóng gói 4 backend services + 3 container MySQL 8 (auth_db, course_db, registration_db)
+
+7. Quản lý API Key Đối tác & Phân quyền Scope (Buổi bổ sung)
+- Vòng đời API Key: ACTIVE -> REVOKED, hỗ trợ expiresAt (hết hạn tự động)
+- Phân quyền theo scope: Mỗi key chỉ được gọi các API đã cấp quyền (ví dụ: courses:read)
+- Bộ nhớ đệm Gateway (TTL 30s): Đánh đổi giữa hiệu năng xử lý cao và thời gian phản hồi thu hồi tối đa 30s
+- Bảo mật hiển thị 1 lần: Giao diện chỉ hiển thị giá trị key thật 1 lần duy nhất khi tạo mới, không lưu trữ lộ trên UI
