@@ -77,29 +77,48 @@ export default function ApiKeysPage() {
     };
 
     return (
-        <div className="page-container animate-fade-in" style={{ maxWidth: 960, margin: '0 auto', paddingBottom: 48 }}>
+        <div className="page-container animate-fade-in">
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Quản Lý API Key Đối Tác</h1>
-                    <p className="page-subtitle">Cấp phát, phân quyền theo scope và thu hồi API Key dành cho các hệ thống tích hợp bên ngoài</p>
+                    <p className="page-subtitle">Cấp phát, phân quyền theo scope và thu hồi API Key cho các hệ thống tích hợp bên ngoài</p>
                 </div>
             </div>
 
             {/* Form cap key moi */}
-            <div className="card" style={{ marginBottom: 28, padding: 24 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="7.5" cy="15.5" r="4.5"></circle>
-                        <path d="m21 2-9.6 9.6"></path>
-                        <path d="m15.5 7.5 3 3"></path>
-                    </svg>
-                    Cấp API Key mới
-                </h3>
-                <form onSubmit={handleCreate}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 16 }}>
+            <div className="form-card animate-fade-in">
+                <div className="form-header">
+                    <div className="form-header-title">
+                        <div className="form-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="7.5" cy="15.5" r="4.5"></circle>
+                                <path d="m21 2-9.6 9.6"></path>
+                                <path d="m15.5 7.5 3 3"></path>
+                            </svg>
+                        </div>
                         <div>
-                            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>
-                                Tên đối tác <span style={{ color: '#ef4444' }}>*</span>
+                            <h2 className="form-title">Cấp API Key mới</h2>
+                            <p className="form-subtitle">Điền thông tin đối tác và phạm vi quyền truy cập để phát hành mã khóa</p>
+                        </div>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="server-error-banner animate-fade-in" style={{ marginBottom: 16 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleCreate}>
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">
+                                Tên đối tác <span className="required-star">*</span>
                             </label>
                             <input
                                 type="text"
@@ -108,12 +127,11 @@ export default function ApiKeysPage() {
                                 value={ownerName}
                                 onChange={(e) => setOwnerName(e.target.value)}
                                 required
-                                style={{ width: '100%', boxSizing: 'border-box' }}
                             />
                         </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>
-                                Scopes (phân tách bởi dấu phẩy) <span style={{ color: '#ef4444' }}>*</span>
+                        <div className="form-group">
+                            <label className="form-label">
+                                Scopes (phân tách bởi dấu phẩy) <span className="required-star">*</span>
                             </label>
                             <input
                                 type="text"
@@ -122,11 +140,10 @@ export default function ApiKeysPage() {
                                 value={scopes}
                                 onChange={(e) => setScopes(e.target.value)}
                                 required
-                                style={{ width: '100%', boxSizing: 'border-box' }}
                             />
                         </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>
+                        <div className="form-group">
+                            <label className="form-label">
                                 Hiệu lực (số ngày, để trống = vĩnh viễn)
                             </label>
                             <input
@@ -136,20 +153,17 @@ export default function ApiKeysPage() {
                                 min="1"
                                 value={validDays}
                                 onChange={(e) => setValidDays(e.target.value)}
-                                style={{ width: '100%', boxSizing: 'border-box' }}
                             />
                         </div>
                     </div>
 
-                    {error && (
-                        <div style={{ color: '#f87171', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-                            {error}
-                        </div>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button type="submit" className="btn-action btn-primary" disabled={submitting} style={{ padding: '9px 20px', fontSize: 14 }}>
-                            {submitting ? 'Đang tạo...' : 'Cấp API Key'}
+                    <div className="form-actions" style={{ marginTop: 18 }}>
+                        <button type="submit" className="btn-action btn-primary" disabled={submitting}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                <circle cx="7.5" cy="15.5" r="4.5"></circle>
+                                <path d="m21 2-9.6 9.6"></path>
+                            </svg>
+                            <span>{submitting ? 'Đang cấp...' : 'Cấp API Key'}</span>
                         </button>
                     </div>
                 </form>
@@ -157,51 +171,57 @@ export default function ApiKeysPage() {
 
             {/* Hop thong bao Key vua tao - chi hien thi 1 lan duy nhat */}
             {newKeyValue && (
-                <div style={{
-                    background: 'rgba(234, 179, 8, 0.12)',
-                    border: '1px solid rgba(234, 179, 8, 0.4)',
-                    padding: 18,
-                    borderRadius: 10,
-                    marginBottom: 28
+                <div className="animate-fade-in" style={{
+                    background: '#fefce8',
+                    border: '1.5px solid #facc15',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '20px 24px',
+                    marginBottom: 24,
+                    boxShadow: '0 4px 12px rgba(234, 179, 8, 0.15)'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fde047', fontWeight: 700, fontSize: 14 }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#854d0e', fontWeight: 700, fontSize: 14 }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="8" x2="12" y2="12"></line>
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
                             </svg>
-                            Key vừa tạo (chỉ hiển thị 1 lần duy nhất, hãy sao chép và lưu trữ an toàn ngay):
+                            Key vừa tạo (chỉ hiển thị 1 lần duy nhất, hãy sao chép và lưu trữ ngay):
                         </div>
                         <button
                             type="button"
                             onClick={handleCopyKey}
                             className="btn-action"
                             style={{
-                                background: copied ? '#15803d' : '#ca8a04',
-                                color: '#fff',
-                                padding: '5px 14px',
-                                fontSize: 12,
+                                background: copied ? 'var(--teal-600)' : '#eab308',
+                                color: '#ffffff',
                                 border: 'none',
-                                borderRadius: 6,
+                                padding: '6px 16px',
+                                fontSize: 13,
+                                borderRadius: 'var(--radius-md)',
                                 cursor: 'pointer',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
                                 transition: 'all 0.2s'
                             }}
                         >
-                            {copied ? '✓ Đã chép' : 'Sao chép Key'}
+                            {copied ? '✓ Đã sao chép' : 'Sao chép Key'}
                         </button>
                     </div>
                     <pre style={{
-                        background: '#091322',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        padding: '12px 16px',
-                        borderRadius: 8,
+                        background: 'var(--navy-900)',
+                        border: '1px solid var(--navy-700)',
+                        padding: '14px 18px',
+                        borderRadius: 'var(--radius-md)',
                         color: '#38bdf8',
                         fontSize: 14,
-                        fontFamily: 'monospace',
+                        fontFamily: 'var(--font-mono)',
                         userSelect: 'all',
                         overflowX: 'auto',
-                        margin: 0
+                        margin: 0,
+                        letterSpacing: '0.5px'
                     }}>
                         {newKeyValue}
                     </pre>
@@ -209,93 +229,90 @@ export default function ApiKeysPage() {
             )}
 
             {/* Danh sach API Key */}
-            <div className="card" style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                    Danh sách API Key đối tác
-                </h3>
+            <div className="table-card animate-fade-in">
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div className="form-icon" style={{ width: 34, height: 34 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy-900)' }}>
+                        Danh sách API Key đối tác
+                    </h3>
+                </div>
 
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                         Đang tải danh sách API Key...
                     </div>
                 ) : keys.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
-                        Chưa có API Key nào được cấp.
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                        Chưa có API Key nào được cấp trong hệ thống.
                     </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                    <div className="table-wrapper">
+                        <table className="custom-table">
                             <thead>
-                                <tr style={{ textAlign: 'left', borderBottom: '2px solid #334155', color: '#94a3b8', fontSize: 13 }}>
-                                    <th style={{ padding: '12px 10px' }}>Đối tác</th>
-                                    <th style={{ padding: '12px 10px' }}>Scopes</th>
-                                    <th style={{ padding: '12px 10px' }}>Trạng thái</th>
-                                    <th style={{ padding: '12px 10px' }}>Hạn sử dụng</th>
-                                    <th style={{ padding: '12px 10px', textAlign: 'right' }}>Thao tác</th>
+                                <tr>
+                                    <th>Đối tác</th>
+                                    <th>Scopes</th>
+                                    <th style={{ textAlign: 'center' }}>Trạng thái</th>
+                                    <th>Hạn sử dụng</th>
+                                    <th style={{ textAlign: 'right' }}>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {keys.map((k) => (
-                                    <tr key={k.id} style={{ borderBottom: '1px solid #1e293b' }}>
-                                        <td style={{ padding: '14px 10px', fontWeight: 600, color: '#f1f5f9' }}>
+                                    <tr key={k.id}>
+                                        <td style={{ fontWeight: 700, color: 'var(--navy-900)' }}>
                                             {k.ownerName}
                                         </td>
-                                        <td style={{ padding: '14px 10px' }}>
+                                        <td>
                                             <span style={{
-                                                background: 'rgba(56, 189, 248, 0.12)',
-                                                color: '#38bdf8',
-                                                padding: '3px 8px',
-                                                borderRadius: 4,
+                                                background: 'var(--teal-50)',
+                                                color: 'var(--teal-800)',
+                                                border: '1px solid var(--teal-200)',
+                                                padding: '3px 10px',
+                                                borderRadius: 6,
                                                 fontSize: 12,
-                                                fontFamily: 'monospace'
+                                                fontWeight: 600,
+                                                fontFamily: 'var(--font-mono)'
                                             }}>
                                                 {k.scopes}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '14px 10px' }}>
-                                            <span className={`badge ${k.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`} style={{
-                                                background: k.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                                                color: k.status === 'ACTIVE' ? '#4ade80' : '#f87171',
-                                                border: `1px solid ${k.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                                                padding: '2px 8px',
-                                                borderRadius: 6,
-                                                fontSize: 11,
-                                                fontWeight: 700
-                                            }}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span className={`badge ${k.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
                                                 {k.status}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '14px 10px', color: '#94a3b8' }}>
+                                        <td style={{ color: 'var(--text-muted)' }}>
                                             {k.expiresAt ? new Date(k.expiresAt).toLocaleDateString('vi-VN') : 'Vĩnh viễn'}
                                         </td>
-                                        <td style={{ padding: '14px 10px', textAlign: 'right' }}>
+                                        <td style={{ textAlign: 'right' }}>
                                             {k.status === 'ACTIVE' ? (
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRevoke(k)}
-                                                    className="btn-action"
-                                                    style={{
-                                                        background: 'rgba(239, 68, 68, 0.15)',
-                                                        color: '#f87171',
-                                                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                                                        padding: '4px 12px',
-                                                        fontSize: 12,
-                                                        borderRadius: 6,
-                                                        cursor: 'pointer'
-                                                    }}
+                                                    className="btn-action btn-danger"
+                                                    style={{ padding: '6px 14px', fontSize: 12 }}
                                                 >
-                                                    Thu hồi
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                                                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                                                    </svg>
+                                                    <span>Thu hồi</span>
                                                 </button>
                                             ) : (
-                                                <span style={{ color: '#64748b', fontSize: 12 }}>Đã thu hồi</span>
+                                                <span style={{ color: 'var(--text-subtle)', fontSize: 13, fontStyle: 'italic' }}>
+                                                    Đã thu hồi
+                                                </span>
                                             )}
                                         </td>
                                     </tr>
